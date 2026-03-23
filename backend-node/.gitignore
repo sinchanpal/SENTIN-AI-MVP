@@ -1,0 +1,33 @@
+# --------------------
+# 1. Node.js & React
+# --------------------
+node_modules/
+.env
+.env.local
+npm-debug.log
+build/
+dist/
+
+# --------------------
+# 2. Python Backend
+# --------------------
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.pytest_cache/
+
+# --------------------
+# 3. OS & Editor Files
+# --------------------
+.DS_Store
+.vscode/
+
+# --------------------
+# 4. Large ML Models (Optional)
+# --------------------
+# If your .joblib or .pkl files are over 50MB, uncomment the lines below 
+# so GitHub doesn't block your push. (If they are small, leave them commented out!)
+# *.joblib
+# *.pkl

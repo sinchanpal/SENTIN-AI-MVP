@@ -11,7 +11,7 @@ function App() {
 
   const handleScan = async () => {
     try {
-      const response = await axios.post(`${serverUrl}/api/scan-text`, { userText: inputText });
+      const response = await axios.post(`${serverUrl}/api/text/scan-text`, { userText: inputText });
 
       //already unpacked the JSON, so we just grab response.data!
       setResult(response.data); // Save the Python response to display it
