@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from routers import text_scanner
 from routers import url_scanner
+from routers import image_scanner
 
 #! to run this file use command : uvicorn main:app --reload
 app = FastAPI(title="SENTIN-AI Backend API")
@@ -9,6 +10,8 @@ app = FastAPI(title="SENTIN-AI Backend API")
 # Connect the separate tracks to the main station!
 app.include_router(text_scanner.router, prefix="/api")
 app.include_router(url_scanner.router, prefix="/api")
+app.include_router(image_scanner.router, prefix="/api")
+
 
 @app.get("/")
 def home():

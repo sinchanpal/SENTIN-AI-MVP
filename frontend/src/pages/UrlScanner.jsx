@@ -2,75 +2,85 @@ import { useState } from 'react';
 import axios from 'axios';
 import { serverUrl } from '../App';
 
-
-
 function UrlScanner() {
     const [inputUrl, setInputUrl] = useState("");
     const [result, setResult] = useState(null);
-    // Added a quick loading state so the user knows the AI is thinking!
     const [loading, setLoading] = useState(false);
 
     const handleScan = async () => {
-        if (!inputUrl) return; // Prevent scanning empty boxes
+        if (!inputUrl) return;
 
         setLoading(true);
-        setResult(null); // Clear the old result
+        setResult(null);
 
         try {
-            // Notice we are hitting the /api/url/scan-url endpoint!
-            // Also, we use 'input_url' because that is exactly what your Node.js controller expects.
             const response = await axios.post(`${serverUrl}/api/url/scan-url`, {
                 input_url: inputUrl
             });
-
             setResult(response.data);
-            // setInputUrl("");
-
         } catch (error) {
             console.error("Error connecting to server:", error);
             setResult({ threat_level: "Error", reason: "Could not connect to the AI server." });
         } finally {
-            setLoading(false); // Turn off the loading state
+            setLoading(false);
         }
     };
 
     return (
-        <div className='p-12.5 font-serif'>
-            <h1 className="text-3xl font-bold mb-6 text-slate-800">SENTIN-AI: URL Scanner</h1>
+        // 1. The Main Page Wrapper: Centers everything!
+        <div className='flex flex-col items-center justify-center min-h-[80vh] px-4 py-10'>
 
-            {/* We use an <input type="url"> here instead of a <textarea> since links are one line */}
-            <input
-                type="url"
-                value={inputUrl}
-                onChange={(e) => setInputUrl(e.target.value)}
-                placeholder="Paste suspicious link here (e.g., https://...)"
-                className='w-full max-w-lg p-4 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 transition duration-200'
-            />
-            <br /><br />
+            {/* 2. The Scanner Card */}
+            <div className="w-full max-w-2xl bg-slate-800 rounded-2xl shadow-2xl p-8 border border-slate-700">
 
-            <button
-                onClick={handleScan}
-                disabled={loading}
-                className='px-6 py-3 bg-amber-400 text-white font-semibold rounded-xl shadow-md hover:bg-amber-500 hover:scale-105 transition duration-200 cursor-pointer disabled:opacity-50 disabled:hover:scale-100'
-            >
-                {loading ? "Scanning AI..." : "Scan URL"}
-            </button>
+                {/* 3. The Header */}
+                <h1 className="text-3xl font-black mb-2 text-transparent bg-clip-text bg-linear-to-r from-amber-400 to-yellow-300 text-center">
+                    SENTIN-AI: URL Scanner
+                </h1>
+                <p className="text-slate-400 text-center mb-8">
+                    Paste any suspicious link below to check for phishing or malicious websites.
+                </p>
 
-            {/* The Results Box */}
-            {result && (
-                <div className={`mt-5 p-4 border-2 rounded-xl shadow-sm ${result.threat_level === 'High' ?
-                    'border-red-600 bg-red-200 text-red-900' :
-                    result.threat_level === 'Error' ?
-                        'border-gray-500 bg-gray-200' :
-                        'border-green-600 bg-green-200 text-green-900'
-                    }`}>
+                {/* 4. The Dark Mode Input Box */}
+                <input
+                    type="url"
+                    value={inputUrl}
+                    onChange={(e) => setInputUrl(e.target.value)}
+                    placeholder="Paste suspicious link here (e.g., https://...)"
+                    className='w-full p-4 bg-slate-900 text-slate-200 border border-slate-600 rounded-xl shadow-inner focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition duration-200'
+                />
 
-                    <h3 className="font-bold text-lg mb-2">Scan Result:</h3>
-                    <p><strong>Threat Level:</strong> {result.threat_level}</p>
-                    <p><strong>Reason:</strong> {result.reason}</p>
-
+                {/* 5. The Button (Centered) */}
+                <div className="flex justify-center mt-6">
+                    <button
+                        onClick={handleScan}
+                        disabled={loading || !inputUrl}
+                        className='w-full sm:w-auto px-8 py-3 bg-linear-to-r from-amber-500 to-amber-400 text-slate-900 font-bold rounded-xl shadow-lg hover:from-amber-400 hover:to-yellow-300 hover:scale-105 transition duration-200 cursor-pointer disabled:opacity-50 disabled:hover:scale-100'
+                    >
+                        {loading ? "Scanning AI..." : "Scan URL"}
+                    </button>
                 </div>
-            )}
+
+                {/* 6. The Results Box (Optimized for Dark Mode) */}
+                {result && (
+                    <div className={`mt-8 p-5 border-2 rounded-xl shadow-md transition-all duration-300 ${result.threat_level === 'High' ? 'border-red-500/50 bg-red-900/20 text-red-200' :
+                        result.threat_level === 'Error' ? 'border-slate-500/50 bg-slate-800/50 text-slate-300' :
+                            'border-green-500/50 bg-green-900/20 text-green-200'
+                        }`}>
+                        <h3 className="font-bold text-xl mb-3 flex items-center gap-2">
+                            {result.threat_level === 'High' ? '🚨' : result.threat_level === 'Error' ? '⚠️' : '✅'}
+                            Scan Result:
+                        </h3>
+                        <p className="mb-2"><strong className="text-slate-300">Threat Level:</strong> {result.threat_level}</p>
+                        <p className='whitespace-pre-line mt-2 text-slate-400 font-medium'>
+                            <strong className="text-slate-300">Reason:</strong>
+                            <br />
+                            {result.reason}
+                        </p>
+                    </div>
+                )}
+
+            </div>
         </div>
     );
 }

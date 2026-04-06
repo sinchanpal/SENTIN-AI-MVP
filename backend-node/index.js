@@ -3,6 +3,7 @@ import cors from 'cors'
 import dotenv from 'dotenv'
 import scanTextRouter from './routes/scanTextRoutes.js';
 import scanUrlRouter from './routes/scanUrlRoutes.js';
+import scanImageRouter from './routes/scanImageRoutes.js';
 
 // 1. App Config
 dotenv.config();
@@ -17,6 +18,7 @@ app.use(express.json());  // This allows Node to read JSON data
 // This tells Node: "Any request starting with /api/text should look at textRouter"
 app.use('/api/text',scanTextRouter);
 app.use('/api/url',scanUrlRouter);
+app.use('/api/image',scanImageRouter);
 
 // Start the Node server
 app.listen(port, () => {

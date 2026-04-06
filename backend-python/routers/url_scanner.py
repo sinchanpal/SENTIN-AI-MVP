@@ -5,20 +5,19 @@ import pandas as pd
 from urllib.parse import urlparse
 from tld import get_tld  # this is usefull for get top level domain from any url
 import re
+import shap
 
 
 # Create the router
 router = APIRouter()
 
 try:
+    print("Loading URL Model and SHAP Explainer...")
     model = joblib.load("models/url_model.joblib")
+    explainer = shap.TreeExplainer(model)
+    print("AI Engine Ready.")
 except Exception as e:
     print(f"Warning: Could not load URL model. Error: {e}")
-
-
-# Define the expected input from Node.js
-class URLInput(BaseModel):
-    url: str
 
 
 # ? Feature Engineering.
@@ -240,6 +239,31 @@ def tld_length(tld):
         return -1
 
 
+# --- THE TRANSLATOR ---
+# This converts our ugly code variables into beautiful English sentences for the React frontend!
+feature_translations = {
+    "count_of_dir": "The link contains an unusually high number of hidden folders.",
+    "fd_length": "The folder names in this link are suspiciously long.",
+    "length_of_url": "The overall web address is suspiciously long, often used to hide the true destination.",
+    "count_of_dots": "Too many dots are used, which is a common trick to create fake subdomains.",
+    "use_of_ip": "The link uses a raw IP address instead of a standard trusted domain name.",
+    "sus_url": 'The link contains common scam words (like "login", "update", or "paypal").',
+    "count-digits": "The link contains an unusually high number of random numbers.",
+    "count-letters": "The text structure of the link looks artificially generated.",
+    "count_https": "The security certificate structure is highly unusual.",
+    "short_url": "This is a shortened link (like bit.ly) which hides the final destination.",
+    "count_of_hyphen": "There are too many hyphens, often used to fake real brand names.",
+    "count_of_atrate": 'The presence of "@" symbols can redirect users to a different destination, often used in phishing attacks.',
+    "count_of_embed": 'The link contains embedded elements (like "//" or unusual structures) that may hide the actual destination.',
+    "count_http": "The link uses insecure HTTP protocol instead of HTTPS, which may indicate a lack of security.",
+    "count_%": 'The URL contains encoded characters ("%"), often used to obfuscate malicious links.',
+    "count_?": 'Too many query parameters ("?") can be used to confuse users or hide malicious intent.',
+    "count_=": 'Multiple "=" signs in parameters may indicate complex or suspicious data manipulation in the URL.',
+    "hostname_length": "The domain name is unusually long, which is often used to mimic legitimate websites.",
+    "tld_length": "The top-level domain (like .com, .xyz) is unusually long or uncommon, which can be suspicious.",
+}
+
+
 def extract_features(url):
 
     url = str(url)
@@ -277,6 +301,11 @@ def extract_features(url):
     return features
 
 
+# Define the expected input from Node.js
+class URLInput(BaseModel):
+    url: str
+
+
 # ? The actual API Endpoint
 @router.post("/analyze-url")
 def analyze_url(data: URLInput):
@@ -296,7 +325,7 @@ def analyze_url(data: URLInput):
 
     # Check if any trusted domain is inside the URL
     if any(trusted in target_url.lower() for trusted in trusted_domains):
-        return {"threat_level": "Low", "reason": "Safe: Verified Trusted Domain"}
+        return {"threat_level": "Safe", "reason": "Safe: Verified Trusted Domain"}
 
     # --- STEP 2: THE AI PIPELINE ---
 
@@ -311,13 +340,52 @@ def analyze_url(data: URLInput):
         prediction = model.predict(input_df)
 
         # Map the ML result (1 = Threat, 0 = Safe) to your React UI logic
-        if prediction[0] == 1:
+        if prediction[0] == 0:
             return {
-                "threat_level": "High",
-                "reason": "Malicious Phishing/Malware Link Detected",
+                "threat_level": "Safe",
+                "reason": "No suspicious patterns or hidden tricks detected in the link structure.",
             }
         else:
-            return {"threat_level": "Low", "reason": "Looks Safe. No threat detected."}
+            # --- If Fake, wake up the SHAP Detective! and find the features which makes the prediction as fake---
+            shap_values = explainer(input_df)
+
+            # Get the explanation for the "Fake" class (Class 1)
+            fake_explanation = shap_values[:, :, 1][0]
+
+            # Zip the feature names and their math scores together into a list
+            feature_impacts = list(
+                zip(fake_explanation.feature_names, fake_explanation.values)
+            )
+
+            # THE EXTRACTOR: Filter only the RED bars (scores greater than 0)
+            red_flags = [item for item in feature_impacts if item[1] > 0]
+
+            # Sort them so the biggest red bar is at the top of the list!
+            red_flags.sort(key=lambda x: x[1], reverse=True)
+
+            # Grab the top 3 biggest red bars
+            top_3_red_flags = red_flags[:3]
+
+            # Format the top 3 reasons with bullet points so React can display them easily
+            final_reasons_list = []
+
+            for flag in top_3_red_flags:
+                feature_name = flag[0]
+
+                english_reason = feature_translations.get(
+                    feature_name, f"Suspicious activity detected in: {feature_name}"
+                )
+
+                final_reasons_list.append(f"• {english_reason}")
+
+            # Join the bullet points together with line breaks
+            #Python backend is sending a string with line breaks, like this: "• Reason 1\n• Reason 2\n• Reason 3"
+            combined_reason = "\n".join(final_reasons_list)
+
+            return {
+                "threat_level": "High", 
+                "reason": combined_reason
+                }
 
     except Exception as e:
         print(f"Extraction Error: {str(e)}")
