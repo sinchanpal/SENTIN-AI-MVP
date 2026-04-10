@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { serverUrl } from '../App';
+import { ClipLoader } from "react-spinners";
 
 function ScreenshotScanner() {
     const [selectedFile, setSelectedFile] = useState(null);
@@ -83,9 +84,9 @@ function ScreenshotScanner() {
                     <button
                         onClick={handleScan}
                         disabled={loading || !selectedFile}
-                        className='w-full sm:w-auto px-8 py-3 bg-linear-to-r from-amber-500 to-amber-400 text-slate-900 font-bold rounded-xl shadow-lg hover:from-amber-400 hover:to-yellow-300 hover:scale-105 transition duration-200 cursor-pointer disabled:opacity-50 disabled:hover:scale-100'
+                        className='w-[70%] sm:w-auto px-8 py-3 bg-linear-to-r from-amber-500 to-amber-400 text-slate-900 font-bold rounded-xl shadow-lg hover:from-amber-400 hover:to-yellow-300 hover:scale-105 transition duration-200 cursor-pointer disabled:opacity-50 disabled:hover:scale-100'
                     >
-                        {loading ? "Scanning Visuals..." : "Scan Screenshot"}
+                        {loading ? <ClipLoader size={25} color="white" /> : "Scan Screenshot"}
                     </button>
                 </div>
 
@@ -105,6 +106,30 @@ function ScreenshotScanner() {
                             <p className="mt-2">
                                 <strong className="text-slate-300">AI Confidence:</strong> {result.confidence_percentage}%
                             </p>
+                        )}
+
+                        {/* --- NEW: XAI HEATMAP DISPLAY --- */}
+                        {result.heatmap && (
+                            <div className="mt-6 pt-6 border-t border-slate-700/50">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h4 className="font-bold text-amber-400 flex items-center gap-2">
+                                        ✨ XAI Vision Analysis
+                                    </h4>
+                                    <span className="text-[10px] px-2 py-1 bg-amber-400/10 text-amber-400 rounded-full border border-amber-400/20 uppercase tracking-widest font-bold">
+                                        Heatmap Enabled
+                                    </span>
+                                </div>
+                                <p className="text-sm text-slate-400 mb-4">
+                                    The glowing regions indicate areas where the AI detected suspicious patterns (Logos, Input Fields, or Buttons).
+                                </p>
+                                <div className="relative rounded-xl overflow-hidden border border-slate-700 shadow-2xl">
+                                    <img
+                                        src={result.heatmap}
+                                        alt="AI Heatmap"
+                                        className="w-full h-auto object-contain bg-black"
+                                    />
+                                </div>
+                            </div>
                         )}
                     </div>
                 )}
