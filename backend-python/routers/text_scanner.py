@@ -1,6 +1,5 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-import joblib
 import pickle
 import nltk
 from nltk.corpus import stopwords
