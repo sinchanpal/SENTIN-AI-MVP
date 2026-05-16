@@ -32,8 +32,8 @@ Bash
 cd backend-python
 python -m venv venv
 
-# Activate the virtual environment:
-# On Windows: venv\Scripts\activate
+### Activate the virtual environment:
+### On Windows: venv\Scripts\activate
 
 
 pip install -r requirements.txt
